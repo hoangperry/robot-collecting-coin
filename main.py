@@ -22,16 +22,18 @@ def display_robot(x, y, game_display, image):
 
 
 def generate_random_board(height: int, width: int):
-    return [[random.randint(0, 1) for i in range(width)] for j in range(height)]
+    map_ret = [[random.randint(0, 1) for i in range(width)] for j in range(height)]
+    map_ret[0][0] = 0
+    return  map_ret
 
 
 def display_map(game_display):
     for i in range(board_width):
         for j in range(board_height):
-            if i + j % 2 == 0:
-                pygame.draw.rect(game_display, my_color['gray'], [i, j, step_size, step_size])
+            if (i + j)%2 == 0:
+                pygame.draw.rect(game_display, my_color['gray'], [i*step_size, j*step_size, step_size, step_size])
             else:
-                pygame.draw.rect(game_display, my_color['white'], [i, j, step_size, step_size])
+                pygame.draw.rect(game_display, my_color['white'], [i*step_size, j*step_size, step_size, step_size])
 
 
 def display_coin(game_display, map_coin, image):
@@ -49,24 +51,25 @@ def main():
     crashed = False
     robot_x = 0
     robot_y = 0
-    map = generate_random_board(board_height, board_width)
+    map_coin = generate_random_board(board_height, board_width)
     while not crashed:
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 crashed = True
 
+            map_coin[int(robot_y/step_size)][int(robot_x/step_size)] = 0
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    robot_x -= step_size
-                elif event.key == pygame.K_RIGHT:
-                    robot_x += step_size
+                if event.key == pygame.K_RIGHT:
+                    if robot_x/step_size + 1< board_width:
+                        robot_x += step_size
                 elif event.key == pygame.K_DOWN:
-                    robot_y += step_size
-                elif event.key == pygame.K_UP:
-                    robot_y -= step_size
+                    if robot_y/step_size + 1 < board_height:
+                        robot_y += step_size
 
         game_display.fill(my_color['white'])
-        display_coin(game_display, map, coin_img)
+        display_map(game_display)
+        display_coin(game_display, map_coin, coin_img)
         display_robot(robot_x, robot_y, game_display, robot_img)
         pygame.display.update()
         clock.tick(60)
