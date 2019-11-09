@@ -2,6 +2,35 @@ import pygame
 import random
 
 
+def calc_reward_board(board):
+    reward_board = [[0 for i in range(board[0].__len__())] for j in range(board.__len__())]
+    reward_board[0][0] = board[0][0]
+    for i in range(1, board[0].__len__()):
+        reward_board[0][i] = reward_board[0][i - 1] + board[0][i]
+    for i in range(1, board.__len__()):
+        reward_board[i][0] = reward_board[i - 1][0] + board[i][0]
+        for j in range(1, board[0].__len__()):
+            reward_board[i][j] = max(reward_board[i - 1][j], reward_board[i][j - 1]) + board[i][j]
+    width = reward_board[0].__len__() -1
+    height = reward_board.__len__() - 1
+    steps = list()
+    while height > 0 or width > 0:
+        steps.append("({}, {})".format(width+1, height+1))
+        if reward_board[height][width-1] > reward_board[height-1][width]:
+            if width > 0:
+                width -= 1
+            else:
+                height -= 1
+        else:
+            if height > 0:
+                height -= 1
+            else:
+                width -= 1
+    print(" -> ".join(reversed(steps)))
+    return steps
+    return reward_board
+
+
 class GameRobotCollectingCoin:
     def __init__(self, board_width: int, board_height: int, step_size: int = 40, goback: bool = False):
         pygame.init()
@@ -48,6 +77,7 @@ class GameRobotCollectingCoin:
         robot_y = 0
         score = 0
         crashed = False
+        bestway = calc_reward_board(self.map_coin)
         while not crashed:
             print(score)
             for event in pygame.event.get():
@@ -79,5 +109,5 @@ class GameRobotCollectingCoin:
 
 
 if __name__ == '__main__':
-    game_robot = GameRobotCollectingCoin(6, 7, goback=True)
+    game_robot = GameRobotCollectingCoin(16, 16, goback=True)
     game_robot.game_loop()
