@@ -32,9 +32,10 @@ def calc_reward_board(board):
 
 
 class GameRobotCollectingCoin:
-    def __init__(self, board_width: int, board_height: int, speed: float = 0.5,
+    def __init__(self, board_width: int, board_height: int, speed: float = 0.5, del_coin: bool = True,
                  step_size: int = 40, goback: bool = False, auto: bool = True):
         pygame.init()
+        self.del_coin = del_coin
         self.speed = speed
         self.goback = goback
         self.auto = auto
@@ -82,10 +83,18 @@ class GameRobotCollectingCoin:
                 if self.map_coin[row][cell] == 1:
                     self.game_display.blit(self.coin_img, (cell * self.step_size, row * self.step_size))
 
-    def things_dodged(self, score) :
-        font = pygame.font.SysFont(None, 40)
-        text = font.render("Score: " + str(score), True, self.game_color['black'])
+    def display_score(self, score, step):
+        font = pygame.font.SysFont(None, self.step_size)
+        text = font.render("Score: {} | Step: {}".format(score, step), True, self.game_color['black'])
         self.game_display.blit(text, (0, self.board_height * self.step_size))
+
+    def update_map_and_score(self, robot_x, robot_y):
+        score_bonus = 0
+        if self.map_coin[int(robot_y / self.step_size)][int(robot_x / self.step_size)] == 1:
+            score_bonus = 1
+            if self.del_coin:
+                self.map_coin[int(robot_y / self.step_size)][int(robot_x / self.step_size)] = 0
+        return score_bonus
 
     def game_loop(self):
         robot_x = 0
@@ -94,45 +103,49 @@ class GameRobotCollectingCoin:
         crashed = False
         reward_board, bestway = calc_reward_board(self.map_coin)
         old_path = [[0 for _ in range(self.board_width)] for _ in range(self.board_height)]
+        done = False
+        step = 0
         if not self.auto:
             while not crashed:
                 old_path[int(robot_y/40)][int(robot_x/40)] = 1
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         crashed = True
-                    if self.map_coin[int(robot_y / self.step_size)][int(robot_x / self.step_size)] == 1:
-                        score += 1
-                        self.map_coin[int(robot_y / self.step_size)][int(robot_x / self.step_size)] = 0
+                    if not done:
+                        score += self.update_map_and_score(robot_x, robot_y)
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_RIGHT:
                             if robot_x / self.step_size + 1 < self.board_width:
+                                step += 1
                                 robot_x += self.step_size
                         elif event.key == pygame.K_DOWN:
                             if robot_y / self.step_size + 1 < self.board_height:
+                                step += 1
                                 robot_y += self.step_size
                         elif event.key == pygame.K_UP and self.goback:
                             if robot_y > 0:
+                                step += 1
                                 robot_y -= self.step_size
                         elif event.key == pygame.K_LEFT and self.goback:
                             if robot_x > 0:
+                                step += 1
                                 robot_x -= self.step_size
 
                 self.game_display.fill(self.game_color['white'])
                 self.display_map(old_path)
                 self.display_coin()
                 self.display_robot(robot_x, robot_y)
+                self.display_score(score, step)
                 pygame.display.update()
                 self.clock.tick(60)
         else:
-            step = 0
-            print(bestway)
             while not crashed:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         crashed = True
-                if self.map_coin[int(robot_y / self.step_size)][int(robot_x / self.step_size)] == 1 :
-                    score += 1
-                    self.map_coin[int(robot_y / self.step_size)][int(robot_x / self.step_size)] = 0
+
+                if not done:
+                    score += self.update_map_and_score(robot_x, robot_y)
                 old_path[int(robot_y / 40)][int(robot_x / 40)] = 1
                 if step < bestway.__len__():
                     if bestway[step][0] > int(robot_x/40):
@@ -143,13 +156,13 @@ class GameRobotCollectingCoin:
                 self.display_map(old_path)
                 self.display_coin()
                 self.display_robot(robot_x, robot_y)
-                self.things_dodged(score)
+                self.display_score(score, step)
                 pygame.display.update()
                 time.sleep(self.speed)
-                print(bestway)
-                step += 1
+                if step < bestway.__len__():
+                    step += 1
 
 
 if __name__ == '__main__':
-    game_robot = GameRobotCollectingCoin(15, 15, goback=True, auto=True, speed=0.1)
+    game_robot = GameRobotCollectingCoin(32, 16, goback=True, auto=True, speed=0.05, del_coin=True)
     game_robot.game_loop()
