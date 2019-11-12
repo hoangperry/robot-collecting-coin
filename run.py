@@ -164,5 +164,5 @@ class GameRobotCollectingCoin:
 
 
 if __name__ == '__main__':
-    game_robot = GameRobotCollectingCoin(32, 16, goback=True, auto=True, speed=0.05, del_coin=False)
+    game_robot = GameRobotCollectingCoin(32, 16, goback=False, auto=True, speed=0.1, del_coin=True)
     game_robot.game_loop()
